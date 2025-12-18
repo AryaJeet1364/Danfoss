@@ -1,0 +1,624 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+<title>Live HVAC Control Dashboard</title>
+<style>
+body{font-family:Arial;background:#f2f5f9;padding:20px}
+.dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:1100px;margin:auto}
+.card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 4px 10px rgba(0,0,0,.08)}
+.value{font-size:18px;margin:8px 0}
+.status{padding:6px 12px;border-radius:20px;font-weight:bold;color:#fff}
+.green{background:#2ecc71}.yellow{background:#f1c40f;color:#000}
+.meter{height:22px;background:#ddd;border-radius:20px;overflow:hidden}
+.fill{height:100%;background:linear-gradient(90deg,#27ae60,#2ecc71);color:#fff;text-align:right;padding-right:8px}
+</style>
+</head>
+
+<body>
+
+<h1 style="text-align:center">Smart HVAC Control – LIVE Dashboard</h1>
+
+<div class="dashboard">
+
+<div class="card" id="Freezer"></div>
+<div class="card" id="Cooler"></div>
+<div class="card" id="Packing"></div>
+
+<div class="card">
+  <h2>⚡ Energy</h2>
+  <div class="value" id="fanPower"></div>
+  <div class="meter"><div class="fill" id="energyBar">0%</div></div>
+</div>
+
+</div>
+
+<script>
+function status(temp, sp){
+  if(Math.abs(temp-sp)<0.5) return ['OPTIMAL','green'];
+  return ['ADJUSTING','yellow'];
+}
+
+async function update(){
+  try{
+    const res = await fetch('live_data.json?ts=' + Date.now());
+    const data = await res.json();
+
+    for(const zone in data.zones){
+      const z = data.zones[zone];
+      const [label,color] = status(z.temperature,z.setpoint);
+
+      document.getElementById(zone).innerHTML = `
+        <h2>${zone}</h2>
+        <div class="value">Temp: <b>${z.temperature} °C</b></div>
+        <div class="value">Setpoint: ${z.setpoint} °C</div>
+        <div class="value">Damper: ${z.damper}%</div>
+        <span class="status ${color}">${label}</span>
+      `;
+    }
+
+    document.getElementById("fanPower").innerHTML =
+      `Fan Power: <b>${data.fan_power_kw} kW</b>`;
+
+    document.getElementById("energyBar").style.width =
+      data.energy_savings_percent + "%";
+
+    document.getElementById("energyBar").innerText =
+      data.energy_savings_percent + "%";
+
+  } catch(e){}
+}
+
+setInterval(update,1000);
+</script>
+
+</body>
+</html> -->
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HVAC Control Dashboard - Live System</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  min-height: 100vh;
+  padding: 2rem;
+  color: #e2e8f0;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+header {
+  margin-bottom: 2rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 1rem;
+  font-size: 0.85rem;
+  color: #10b981;
+  margin-left: 1rem;
+}
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.1) 0%, transparent 70%);
+  border-radius: 0 0 0 100%;
+}
+
+.card:hover {
+  border-color: rgba(96, 165, 250, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 50px rgba(96, 165, 250, 0.15);
+}
+
+.zone-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.zone-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.zone-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(59, 130, 246, 0.1));
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.zone-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.zone-status {
+  padding: 0.4rem 0.9rem;
+  border-radius: 1.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.status-optimal {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-adjusting {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-alert {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.temp-display {
+  margin: 1.5rem 0;
+}
+
+.temp-value {
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.temp-unit {
+  font-size: 1.5rem;
+  color: #64748b;
+  margin-left: 0.25rem;
+}
+
+.temp-target {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+}
+
+.temp-target strong {
+  color: #cbd5e1;
+}
+
+.damper-section {
+  margin-top: 1.5rem;
+}
+
+.damper-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.damper-label span:first-child {
+  color: #94a3b8;
+}
+
+.damper-label span:last-child {
+  color: #fff;
+  font-weight: 600;
+}
+
+.damper-bar {
+  height: 12px;
+  background: rgba(71, 85, 105, 0.4);
+  border-radius: 1rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.damper-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #06b6d4 100%);
+  border-radius: 1rem;
+  transition: width 0.6s ease;
+  position: relative;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.damper-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.metric-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.icon-power {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.1));
+}
+
+.icon-savings {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+}
+
+.metric-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.value-power {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.value-savings {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.metric-unit {
+  font-size: 1.75rem;
+  color: #64748b;
+  margin-left: 0.25rem;
+}
+
+.progress-bar {
+  height: 14px;
+  background: rgba(71, 85, 105, 0.4);
+  border-radius: 1rem;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 0.75rem;
+}
+
+.progress-fill-power {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #06b6d4 100%);
+  border-radius: 1rem;
+  transition: width 0.8s ease;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill-savings {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+  border-radius: 1rem;
+  transition: width 0.8s ease;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill-power::after,
+.progress-fill-savings::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 2.5s infinite;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.metric-note {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-top: 1rem;
+}
+
+footer {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  border-radius: 1rem;
+  text-align: center;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.footer-tags {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  body { padding: 1rem; }
+  h1 { font-size: 2rem; }
+  .grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>HVAC Control System</h1>
+    <div class="subtitle">
+      Real-time monitoring & intelligent control
+      <span class="status-badge">
+        <span class="pulse"></span>
+        System Active
+      </span>
+      <span style="margin-left: auto; color: #64748b;" id="cycleInfo">Cycle #0</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="card" id="freezerCard"></div>
+    <div class="card" id="coolerCard"></div>
+    <div class="card" id="packingCard"></div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon icon-power">⚡</div>
+        <div class="metric-title">Fan Power Consumption</div>
+      </div>
+      <div>
+        <span class="metric-value value-power" id="powerValue">0.0</span>
+        <span class="metric-unit">kW</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill-power" id="powerBar" style="width: 0%"></div>
+      </div>
+      <div class="progress-labels">
+        <span>0 kW</span>
+        <span>8 kW Max</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-header">
+        <div class="metric-icon icon-savings">📉</div>
+        <div class="metric-title">Energy Savings</div>
+      </div>
+      <div>
+        <span class="metric-value value-savings" id="savingsValue">0</span>
+        <span class="metric-unit">%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill-savings" id="savingsBar" style="width: 0%"></div>
+      </div>
+      <div class="metric-note">vs. baseline operation • Optimized damper control</div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-tags">
+        <span>PID Control Active</span>
+        <span>•</span>
+        <span>Multi-Zone Coordination</span>
+        <span>•</span>
+        <span>Adaptive Load Balancing</span>
+      </div>
+      <span>v2.1.0</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+const zones = [
+  { id: 'freezerCard', name: 'Freezer', key: 'Freezer', icon: '❄️' },
+  { id: 'coolerCard', name: 'Cooler', key: 'Cooler', icon: '🌡️' },
+  { id: 'packingCard', name: 'Packing', key: 'Packing', icon: '📦' }
+];
+
+function getStatus(temp, setpoint) {
+  const diff = Math.abs(temp - setpoint);
+  if (diff < 0.5) return { label: 'Optimal', class: 'status-optimal', icon: '✓' };
+  if (diff < 1.5) return { label: 'Adjusting', class: 'status-adjusting', icon: '⟳' };
+  return { label: 'Alert', class: 'status-alert', icon: '!' };
+}
+
+function renderZone(zone, data) {
+  const zoneData = data.zones[zone.key];
+  const status = getStatus(zoneData.temperature, zoneData.setpoint);
+  
+  document.getElementById(zone.id).innerHTML = `
+    <div class="zone-header">
+      <div class="zone-title">
+        <div class="zone-icon">${zone.icon}</div>
+        <div class="zone-name">${zone.name} Zone</div>
+      </div>
+      <div class="zone-status ${status.class}">
+        <span>${status.icon}</span>
+        <span>${status.label}</span>
+      </div>
+    </div>
+    
+    <div class="temp-display">
+      <div>
+        <span class="temp-value">${zoneData.temperature.toFixed(1)}</span>
+        <span class="temp-unit">°C</span>
+      </div>
+      <div class="temp-target">
+        Target: <strong>${zoneData.setpoint}°C</strong>
+      </div>
+    </div>
+    
+    <div class="damper-section">
+      <div class="damper-label">
+        <span>Damper Position</span>
+        <span>${Math.round(zoneData.damper)}%</span>
+      </div>
+      <div class="damper-bar">
+        <div class="damper-fill" style="width: ${zoneData.damper}%"></div>
+      </div>
+    </div>
+  `;
+}
+
+async function update() {
+  try {
+    const response = await fetch('live_data.json?t=' + Date.now());
+    const data = await response.json();
+    
+    zones.forEach(zone => renderZone(zone, data));
+    
+    document.getElementById('powerValue').textContent = data.fan_power_kw.toFixed(1);
+    document.getElementById('powerBar').style.width = `${(data.fan_power_kw / 8) * 100}%`;
+    
+    document.getElementById('savingsValue').textContent = data.energy_savings_percent;
+    document.getElementById('savingsBar').style.width = `${data.energy_savings_percent}%`;
+    
+    document.getElementById('cycleInfo').textContent = `Cycle #${data.cycle}`;
+    
+  } catch (error) {
+    console.log('Waiting for data...');
+  }
+}
+
+setInterval(update, 1000);
+update();
+</script>
+
+</body>
+</html>

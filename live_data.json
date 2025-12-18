@@ -1,0 +1,1 @@
+{"cycle": 173, "zones": {"Freezer": {"temperature": -1.5, "setpoint": -18.0, "damper": 60.2}, "Cooler": {"temperature": 13.51, "setpoint": 3.0, "damper": 59.7}, "Packing": {"temperature": 31.89, "setpoint": 16.5, "damper": 60.2}}, "fan_power_kw": 3.51, "energy_savings_percent": 22}
